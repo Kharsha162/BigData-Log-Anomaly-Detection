@@ -224,6 +224,62 @@ async def get_top_countries(current_user: str = Depends(get_current_user)):
         
     return result
 
+class IpSearchResponse(BaseModel):
+    ip: str
+    latitude: float
+    longitude: float
+    threat_severity: str
+    country: str
+    count: int
+    timestamp: str
+
+@router.get("/search-ip/{ip}", response_model=IpSearchResponse)
+async def search_ip_details(
+    ip: str,
+    current_user: str = Depends(get_current_user)
+):
+    """Searches active security records for a specific IP address and returns consolidated investigation intelligence."""
+    db = app_state.logs_db
+    
+    # Filter records by IP
+    matches = [log for log in db if log.get("ip") == ip]
+    
+    # Calculate geo
+    geo = geolocate_ip(ip)
+    
+    if not matches:
+        return IpSearchResponse(
+            ip=ip,
+            latitude=geo["latitude"],
+            longitude=geo["longitude"],
+            threat_severity="Normal",
+            country=geo["country"],
+            count=0,
+            timestamp=datetime.now().isoformat()
+        )
+        
+    count = len(matches)
+    recent = matches[0]
+    
+    sev = recent.get("threat_severity", "Low")
+    sev_mapped = "Normal"
+    if sev == "Medium":
+        sev_mapped = "Suspicious"
+    elif sev == "High":
+        sev_mapped = "High Threat"
+    elif sev == "Critical":
+        sev_mapped = "Critical"
+        
+    return IpSearchResponse(
+        ip=ip,
+        latitude=geo["latitude"],
+        longitude=geo["longitude"],
+        threat_severity=sev_mapped,
+        country=geo["country"],
+        count=count,
+        timestamp=recent.get("timestamp", datetime.now().isoformat())
+    )
+
 @router.get("/live-attacks", response_model=List[GeoMapThreatRecord])
 async def get_live_attacks(
     count: int = Query(5, ge=1, le=50),

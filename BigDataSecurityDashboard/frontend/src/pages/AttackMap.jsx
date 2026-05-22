@@ -190,6 +190,7 @@ const AttackMap = () => {
                 <GeoMap 
                   threats={filteredThreats} 
                   selectedThreat={selectedThreat} 
+                  onSelectThreat={handleSelectThreat}
                 />
               )}
             </div>
@@ -198,7 +199,7 @@ const AttackMap = () => {
             <div className="space-y-6 flex flex-col h-full justify-between">
               {/* Recharts visualizations & Spark RDD telemetry */}
               <div className="flex-1">
-                <ThreatMapSidebar threats={filteredThreats} />
+                <ThreatMapSidebar threats={filteredThreats} selectedThreat={selectedThreat} />
               </div>
               
               {/* Live threat scrolling ledger */}

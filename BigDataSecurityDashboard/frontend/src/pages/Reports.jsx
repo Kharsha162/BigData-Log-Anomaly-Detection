@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FiFileText, FiDownload, FiPrinter, FiShield, FiAlertTriangle } from 'react-icons/fi';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import { logsApi } from '../services/api';
+import html2pdf from 'html2pdf.js';
 
 const Reports = () => {
+  const reportRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [reportStats, setReportStats] = useState({
     total: 0,
@@ -53,6 +55,26 @@ const Reports = () => {
     window.print();
   };
 
+  const handleDownloadPDF = () => {
+    const element = reportRef.current;
+    if (!element) return;
+
+    const opt = {
+      margin:       0.3,
+      filename:     `SOC_Audit_Report_${new Date().toISOString().substring(0, 10)}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { 
+        scale: 2, 
+        useCORS: true, 
+        logging: false,
+        backgroundColor: '#0C111D' // Retains premium cyber-dark themed audit report
+      },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-darkBg text-gray-200 print:bg-white print:text-black">
       {/* Hide navigation components during browser printing */}
@@ -72,22 +94,31 @@ const Reports = () => {
             <div className="text-xs text-gray-500 font-mono">
               COMPLIANCE AUDIT SCHEMA: PCI-DSS / SOC2 TYPE II
             </div>
-            <button
-              onClick={handlePrintPDF}
-              className="flex items-center gap-2 rounded bg-cyberGreen px-5 py-2.5 text-xs font-bold text-darkBg uppercase shadow-glowGreen hover:bg-cyberGreen/90 transition"
-            >
-              <FiPrinter />
-              <span>Print Security PDF Audit</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleDownloadPDF}
+                className="flex items-center gap-2 rounded bg-cyberBlue px-5 py-2.5 text-xs font-bold text-darkBg uppercase shadow-glowBlue hover:bg-cyberBlue/90 transition"
+              >
+                <FiDownload />
+                <span>Download SOC Audit PDF</span>
+              </button>
+              <button
+                onClick={handlePrintPDF}
+                className="flex items-center gap-2 rounded border border-cyberGreen px-5 py-2.5 text-xs font-bold text-cyberGreen uppercase hover:bg-cyberGreen/10 transition"
+              >
+                <FiPrinter />
+                <span>Print Standard Audit</span>
+              </button>
+            </div>
           </div>
 
           {/* Printable Report Shell */}
-          <div className="rounded-xl border border-cardBorder bg-[#0C111D] p-8 space-y-6 print:border-none print:bg-white print:p-0">
+          <div ref={reportRef} className="rounded-xl border border-cardBorder bg-[#0C111D] p-8 space-y-6 print:border-none print:bg-white print:p-0">
             {/* Header branding */}
             <div className="flex justify-between items-start border-b border-cardBorder pb-6 print:border-black/10">
               <div>
                 <span className="font-sans font-extrabold tracking-widest text-white uppercase text-base print:text-black">
-                  ANTIGRAVITY <span className="text-cyberGreen print:text-black font-semibold">SOC AUDIT</span>
+                  <span className="text-cyberGreen print:text-black font-semibold">SOC AUDIT</span>
                 </span>
                 <p className="text-xs text-gray-500 font-mono mt-1">Report Generated: {new Date().toISOString().substring(0, 19).replace('T', ' ')} UTC</p>
               </div>

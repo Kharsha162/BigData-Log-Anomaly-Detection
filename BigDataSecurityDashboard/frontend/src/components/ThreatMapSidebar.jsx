@@ -3,13 +3,19 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, Legend
 } from 'recharts';
-import { FiTrendingUp, FiGlobe, FiPieChart, FiAlertOctagon, FiZap, FiCpu, FiHardDrive, FiActivity } from 'react-icons/fi';
+import { FiTrendingUp, FiGlobe, FiPieChart, FiAlertOctagon, FiZap, FiCpu, FiHardDrive, FiActivity, FiAlertCircle } from 'react-icons/fi';
 import { sparkApi } from '../services/api';
 
-const ThreatMapSidebar = ({ threats }) => {
+const ThreatMapSidebar = ({ threats, selectedThreat }) => {
   const [activeTab, setActiveTab] = useState('timeline');
   const [sparkMetrics, setSparkMetrics] = useState(null);
   const [sparkLoading, setSparkLoading] = useState(true);
+
+  useEffect(() => {
+    if (selectedThreat) {
+      setActiveTab('investigate');
+    }
+  }, [selectedThreat]);
 
   // Poll Spark metrics every 5 seconds for live analytics
   useEffect(() => {
@@ -118,6 +124,7 @@ const ThreatMapSidebar = ({ threats }) => {
   };
 
   const chartTabs = [
+    ...(selectedThreat ? [{ id: 'investigate', label: 'Investigate', icon: <FiActivity className="text-cyberBlue animate-pulse" /> }] : []),
     { id: 'timeline', label: 'Timeline', icon: <FiTrendingUp /> },
     { id: 'countries', label: 'Countries', icon: <FiGlobe /> },
     { id: 'severity', label: 'Severity', icon: <FiPieChart /> },
@@ -147,6 +154,106 @@ const ThreatMapSidebar = ({ threats }) => {
 
       {/* Render Chart Panel */}
       <div className="flex-1 w-full min-h-[220px]">
+        {activeTab === 'investigate' && selectedThreat && (
+          <div className="h-full w-full flex flex-col justify-between font-mono text-xs">
+            <div>
+              <div className="flex items-center justify-between mb-3 border-b border-cardBorder/40 pb-2">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-cyberBlue flex items-center gap-1.5">
+                  <FiActivity className="animate-pulse text-cyberRed text-xs" />
+                  Live Host Investigation
+                </h4>
+                <span className="text-[9px] text-gray-500">
+                  {selectedThreat.timestamp && typeof selectedThreat.timestamp === 'string'
+                    ? (selectedThreat.timestamp.includes('T') ? selectedThreat.timestamp.split('T')[0] : selectedThreat.timestamp)
+                    : 'Unknown Time'}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div className="bg-[#05070C] p-2.5 rounded-lg border border-cardBorder flex items-center justify-between">
+                  <div>
+                    <span className="text-[8px] text-gray-500 block uppercase font-bold">Investigated Host</span>
+                    <span className="text-sm font-bold text-white tracking-wide">{selectedThreat.ip}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[8px] text-gray-500 block uppercase font-bold">Country Origin</span>
+                    <span className="text-xs font-bold text-cyberBlue flex items-center gap-1 justify-end">
+                      <FiGlobe className="text-[10px]" />
+                      {selectedThreat.country || 'Unknown'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="bg-[#05070C] p-2 rounded border border-cardBorder">
+                    <span className="text-[8px] text-gray-500 block uppercase font-bold">Threat Severity</span>
+                    <span className={`text-[10px] font-bold block mt-0.5 uppercase ${
+                      selectedThreat.threat_severity === 'Critical' ? 'text-purple-400' :
+                      selectedThreat.threat_severity === 'High Threat' ? 'text-cyberRed' :
+                      selectedThreat.threat_severity === 'Suspicious' ? 'text-cyberYellow' : 'text-cyberGreen'
+                    }`}>
+                      {selectedThreat.threat_severity || 'Normal'}
+                    </span>
+                  </div>
+                  <div className="bg-[#05070C] p-2 rounded border border-cardBorder">
+                    <span className="text-[8px] text-gray-500 block uppercase font-bold">Confidence Scale</span>
+                    <span className="text-[10px] font-bold text-white block mt-0.5">
+                      {(() => {
+                        const score = parseFloat(selectedThreat.anomaly_score);
+                        return (isNaN(score) ? 90.0 : score * 100).toFixed(1);
+                      })()}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-[#05070C] p-2.5 rounded border border-cardBorder space-y-1.5 text-[10px] text-gray-400">
+                  <div className="flex justify-between border-b border-cardBorder/30 pb-1">
+                    <span>Attack Signature:</span>
+                    <span className="text-white font-bold max-w-[130px] truncate" title={selectedThreat.threat_type}>{selectedThreat.threat_type || 'Unknown'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-cardBorder/30 pb-1">
+                    <span>ISP Transit Core:</span>
+                    <span className="text-white font-bold max-w-[130px] truncate" title={selectedThreat.isp}>{selectedThreat.isp || 'Local Loop'}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-cardBorder/30 pb-1">
+                    <span>Location Lat/Lon:</span>
+                    <span className="text-white font-bold">
+                      {selectedThreat.latitude !== undefined && selectedThreat.latitude !== null && !isNaN(parseFloat(selectedThreat.latitude))
+                        ? parseFloat(selectedThreat.latitude).toFixed(4)
+                        : '0.0000'}
+                      ,{' '}
+                      {selectedThreat.longitude !== undefined && selectedThreat.longitude !== null && !isNaN(parseFloat(selectedThreat.longitude))
+                        ? parseFloat(selectedThreat.longitude).toFixed(4)
+                        : '0.0000'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>City Node:</span>
+                    <span className="text-white font-bold">{selectedThreat.city || 'Chennai Hub'}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[8px] text-gray-500 uppercase font-bold block">Audited Request Payload</span>
+                  <div className="p-2 rounded bg-[#05070C] border border-cardBorder text-[9px] text-gray-400 overflow-x-auto select-all whitespace-nowrap scrollbar-none font-mono">
+                    <span className="font-bold text-cyberBlue">{selectedThreat.method || 'GET'}</span> {selectedThreat.url || '/'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-cardBorder/40 bg-cyberRed/5 border-dashed border p-2.5 rounded-lg flex items-center gap-2">
+              <FiAlertCircle className="text-cyberRed text-lg animate-pulse shrink-0" />
+              <div>
+                <span className="text-[8px] text-cyberRed uppercase font-bold block">Automated Recommendation</span>
+                <span className="text-[9px] text-gray-400 block leading-tight">
+                  High-frequency anomalies detected. Recommend WAF edge blockage for AS Transit.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'timeline' && (
           <div className="h-full w-full">
             <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 font-mono mb-2">

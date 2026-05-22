@@ -129,11 +129,6 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-cardBorder text-center">
-          <p className="text-[10px] text-gray-600 font-mono">
-            Default credentials: <span className="text-gray-400 font-semibold">admin</span> / <span className="text-gray-400 font-semibold">admin123</span>
-          </p>
-        </div>
       </motion.div>
     </div>
   );

@@ -39,7 +39,8 @@ const ThreatFeed = ({ threats, onSelectThreat }) => {
               className="group p-2.5 rounded-lg border border-cardBorder/40 bg-[#05070C]/80 hover:bg-cardBorder/20 hover:border-cyberGreen/30 cursor-pointer transition duration-150 relative text-[11px] font-mono"
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="font-bold text-gray-300 group-hover:text-white transition">
+                <span className="font-bold text-cyberBlue hover:text-[#33CCFF] hover:underline cursor-pointer transition-colors duration-150 flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyberBlue animate-pulse inline-block"></span>
                   {threat.ip}
                 </span>
                 <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold border uppercase tracking-wider ${getSeverityBadge(threat.threat_severity)}`}>
